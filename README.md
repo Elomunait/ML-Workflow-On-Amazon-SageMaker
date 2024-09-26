@@ -44,7 +44,7 @@ The architecture of this project includes:
 To get started, clone this repository to your local machine using:
 
 ```bash
-git clone https://github.com/yourusername/scones-unlimited-sagemaker-workflow.git
+git clone https://github.com/Elomunait/ML-Workflow-On-Amazon-SageMaker.git
 ```
 
 ### 2. Install required packages
