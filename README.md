@@ -36,7 +36,7 @@ The architecture of this project includes:
 - **AWS Lambda**: Used to implement custom inference logic and integrate with Step Functions.
 - **Step Functions**: For orchestrating the entire ML workflow, from inference to monitoring.
   
-![Architecture](https://example-link-to-your-architecture-diagram.com)
+![Architecture](https://github.com/Elomunait/ML-Workflow-On-Amazon-SageMaker/blob/main/stepfunctions_graph.png)
 
 ## Getting Started
 
