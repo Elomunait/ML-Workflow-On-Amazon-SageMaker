@@ -31,7 +31,7 @@ The workflow is constructed with the following steps:
 ### AWS Lambda Implementation
 
 1. **Image Serializer Lambda**:
-![Image Serializer Lambda Function](https://github.com/Elomunait/ML-Workflow-On-Amazon-SageMaker/blob/main/serializeLambda.py)
+[Image Serializer Lambda Function](https://github.com/Elomunait/ML-Workflow-On-Amazon-SageMaker/blob/main/serializeLambda.py)
 
 2. **Classifier Lambda**:
 [Classifier Lambda Function](https://github.com/Elomunait/ML-Workflow-On-Amazon-SageMaker/blob/main/classifierLambda.py)
@@ -44,17 +44,20 @@ The workflow is constructed with the following steps:
 ## Visualization of Model Performance
 
 After running multiple Step Function executions, the captured inference data from the SageMaker Model Monitor can be visualized. This helps track the confidence levels of the predictions over time and monitor system performance.
-- **Step Functions**: For orchestrating the entire ML workflow, from inference to monitoring.
+**Step Functions**: For orchestrating the entire ML workflow, from inference to monitoring.
 
-
+1. **Step Functions Graph Architecture**
 ![Step Functions Graph Architecture](https://github.com/Elomunait/ML-Workflow-On-Amazon-SageMaker/blob/main/stepfunctions_graph.png)
 
 
+
+2. **Showing a Step Function execution that successfully passes the threshold**
 ![Showing a Step Function execution that successfully passes the threshold](https://github.com/Elomunait/ML-Workflow-On-Amazon-SageMaker/blob/main/state_definition_that_succeeds.png)
 
 
-![Showing a Step Function execution that fails to pass the threshold](https://github.com/Elomunait/ML-Workflow-On-Amazon-SageMaker/blob/main/state_definition_that_shows_a_fail.png)
 
+3. **Showing a Step Function execution that fails to pass the threshold**
+![Showing a Step Function execution that fails to pass the threshold](https://github.com/Elomunait/ML-Workflow-On-Amazon-SageMaker/blob/main/state_definition_that_shows_a_fail.png)
 
 
 
