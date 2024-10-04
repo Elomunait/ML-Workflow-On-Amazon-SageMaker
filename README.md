@@ -1,10 +1,18 @@
 # ML-Workflow-On-Amazon-SageMaker
 
-This project demonstrates how to build a Machine Learning (ML) workflow on **Amazon SageMaker** to automate the process of training, deploying, and monitoring models for a fictional company called Scones Unlimited.
+This project demonstrates how to build a **Machine Learning (ML) workflow** on **Amazon SageMaker** to automate the process of training, deploying, and monitoring models for a fictional company called **Scones Unlimited**.
 
 ## Project Overview
 
-The main goal of this project is to create an ML workflow for Scones Unlimited, an organization delivering scones using drone technology. The ML model predicts whether a drone's image contains a scone or not. The workflow built on **Amazon SageMaker** encompasses several stages, including data preprocessing, model training, and real-time inference using endpoints.
+You have been hired as a **Machine Learning Engineer** by Scones Unlimited, a logistics company focused on scone delivery. Your task is to build and deploy an **image classification model** that can help route delivery vehicles more efficiently by detecting which kind of vehicle delivery drivers have, in order to route them to the correct loading bay and orders. This model will allow Scones Unlimited to optimize their delivery operations by assigning delivery professionals who have a bicycle to nearby orders and giving motorcyclists orders that are farther can help Scones Unlimited optimize their operations.
+
+
+The project includes:
+
+- Building a scalable, safe image classification model.
+- Deploying the model on **AWS SageMaker**.
+- Integrating the model with **AWS Lambda** and **Step Functions**.
+- Monitoring the deployed model using **SageMaker Model Monitor** to detect drift or degraded performance over time.
 
 ## Table of Contents
 - [Project Overview](#project-overview)
@@ -15,33 +23,27 @@ The main goal of this project is to create an ML workflow for Scones Unlimited, 
 - [Model Monitoring](#model-monitoring)
 - [Visualization](#visualization)
 - [Results](#results)
+- [Troubleshooting](#troubleshooting)
 - [References](#references)
-
-## Project Overview
-
-This project leverages **Amazon SageMaker** to build a robust ML pipeline for automating image classification tasks. The steps include:
-
-1. Preprocessing the data.
-2. Training an image classification model using SageMaker.
-3. Deploying the trained model to a SageMaker endpoint.
-4. Monitoring and capturing data from the deployed model.
-5. Visualizing key metrics to evaluate the model performance.
+- [License](#license)
 
 ## Project Architecture
 
-The architecture of this project includes:
+The architecture of this project includes the following components:
 
 - **Amazon SageMaker Studio**: Used for creating and managing Jupyter notebooks for training and deployment.
-- **SageMaker Model Monitor**: To track and evaluate model performance over time.
-- **AWS Lambda**: Used to implement custom inference logic and integrate with Step Functions.
-- **Step Functions**: For orchestrating the entire ML workflow, from inference to monitoring.
-  
+- **SageMaker Model Monitor**: To track and evaluate model performance over time and detect data drift.
+- **AWS Lambda**: Used to implement custom inference logic and integrate with AWS Step Functions.
+- **Step Functions**: For orchestrating the entire ML workflow from inference to monitoring and decision making.
+- **S3 Bucket**: For storing training data, test images, and captured inference data.
+
 ![Architecture](https://github.com/Elomunait/ML-Workflow-On-Amazon-SageMaker/blob/main/stepfunctions_graph.png)
 
 ## Getting Started
 
 ### 1. Clone the repository
-To get started, clone this repository to your local machine using:
+
+To get started, clone this repository to your local machine:
 
 ```bash
 git clone https://github.com/Elomunait/ML-Workflow-On-Amazon-SageMaker.git
@@ -49,7 +51,7 @@ git clone https://github.com/Elomunait/ML-Workflow-On-Amazon-SageMaker.git
 
 ### 2. Install required packages
 
-Before running the project, ensure you have the required Python dependencies installed. You can use the `requirements.txt` file to set up the environment:
+Ensure that you have the required Python dependencies installed. You can use the `requirements.txt` file to set up the environment:
 
 ```bash
 pip install -r requirements.txt
@@ -57,40 +59,46 @@ pip install -r requirements.txt
 
 ### 3. Set up AWS Environment
 
-Ensure that you have your AWS credentials configured and the following services enabled:
+Ensure that you have your **AWS credentials** configured and that the following services are enabled:
 
-- SageMaker
-- Step Functions
+- Amazon SageMaker
+- AWS Step Functions
 - AWS Lambda
 - S3 Bucket (for data storage)
 
+You will also need to create an **IAM Role** with appropriate permissions for SageMaker, Lambda, and Step Functions.
+
 ## Prerequisites
 
-To replicate this project, ensure you have the following:
+To replicate this project, you’ll need:
 
-- An AWS account with permissions for Amazon SageMaker, Lambda, and Step Functions.
-- Familiarity with Python (3.x) and Jupyter Notebooks.
-- Boto3 and AWS CLI configured with credentials
-- Installed libraries:
+- An **AWS account** with permissions for SageMaker, Lambda, Step Functions, and S3.
+- Basic understanding of **Python (3.x)** and **Jupyter Notebooks**.
+- **AWS CLI** and **Boto3** configured with credentials.
+- Installed Python libraries:
   - `boto3`
   - `sagemaker`
-  - `tensorflow` or `PyTorch`
+  - `tensorflow` or `PyTorch` (depending on your chosen framework).
 
 ## Model Deployment
 
-To deploy the ML model using Amazon SageMaker, follow these steps:
+### 1. Data Preprocessing
 
-1. **Data Preprocessing**: Prepare your dataset and upload it to an S3 bucket.
-2. **Model Training**: Use SageMaker to train the model. You can use the `train_model.ipynb` notebook to kickstart this process.
-3. **Endpoint Deployment**: Deploy your trained model to an endpoint for real-time inference.
+Prepare and upload your dataset (e.g., CIFAR-10 for vehicle classification) to an S3 bucket. This data will be used to train the image classification model.
 
-Here’s an example of how to deploy a model in SageMaker:
+### 2. Model Training
+
+Use Amazon SageMaker to train the image classification model. The model will be trained to differentiate between delivery vehicles, such as bicycles and motorcycles. Use the `train_model.ipynb` notebook to start this process.
+
+### 3. Endpoint Deployment
+
+After training, deploy the model to a **SageMaker Endpoint** to enable real-time inference.
 
 ```python
 deployment = img_classifier_model.deploy(
     instance_type="ml.m5.xlarge",
     initial_instance_count=1,
-    endpoint_name="image-classification-endpoint",
+    endpoint_name="vehicle-classification-endpoint",
     data_capture_config=data_capture_config
 )
 
@@ -100,17 +108,18 @@ print("Endpoint Name:", endpoint)
 
 ## Model Monitoring
 
-After deploying the model, **Model Monitor** will track the model’s input and output. This helps to ensure the model remains accurate over time.
+Once deployed, **SageMaker Model Monitor** is used to capture data from the inference requests. This data is analyzed for performance degradation or drift. If the model's predictions start to deviate, you can take action such as retraining the model.
 
-- Configure the data capture settings for your endpoint.
-- Set up SageMaker Model Monitor to evaluate data drift and anomalies.
+Key steps include:
+
+- **Data Capture**: Configure the SageMaker endpoint to capture data for monitoring.
+- **Data Drift Detection**: Set up Model Monitor to track and detect data drift or anomalies over time.
 
 ## Visualization
 
-Visualization is key to understanding the performance of the deployed model. We provide custom visualizations for monitoring:
+Visualization is an important step to evaluate the performance of your model. You can build custom visualizations to analyze the results, such as **box plots** and **histograms** to display prediction confidence levels.
 
-- **Box Plot**: Displays the distribution of confidence levels for model predictions.
-- **Histogram**: Shows the frequency of predictions that meet the defined confidence threshold.
+Example visualization:
 
 ```python
 import plotly.express as px
@@ -118,32 +127,25 @@ box_fig = px.box(df, y="Confidence", points="all", title="Confidence Level Distr
 box_fig.show()
 ```
 
+This allows you to monitor the confidence levels of predictions and spot any trends or anomalies.
+
 ## Results
 
-- **Confidence Scores**: The model achieved confidence scores of as high as **99.8%** and as low as **69.6%** on various test images.
-- **Visualization**: Monitoring visualizations indicate consistent performance with few outliers.
-
-## References
-
-This project was inspired by the **AWS SageMaker** documentation and relevant courses. Additional resources include:
-
-- [Amazon SageMaker Documentation](https://docs.aws.amazon.com/sagemaker/)
-- [Boto3 - AWS SDK for Python](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html)
-- [Step Functions Developer Guide](https://docs.aws.amazon.com/step-functions/)
-
-
+- **Model Confidence**: The model achieved high confidence scores, with values ranging from **69.6% to 99.8%** for various test images.
+- **Performance**: Visualizations, such as box plots and histograms, indicate stable performance with minor outliers that warrant further analysis.
 
 ## Troubleshooting
 
-- **SageMaker Permissions**: Make sure your SageMaker role has the necessary permissions to access S3, Lambda, and other required services.
-- **Endpoint Issues**: If you encounter issues with the endpoint, check the logs in CloudWatch for error details.
+- **SageMaker Permissions**: Ensure that your **SageMaker role** has the necessary permissions for accessing S3, Lambda, and Step Functions.
+- **Endpoint Issues**: If the SageMaker endpoint fails, check the **CloudWatch Logs** for detailed error messages and troubleshooting information.
+- **Data Drift**: Use SageMaker Model Monitor to regularly check for data drift and retrain the model as necessary.
 
 ## References
 
 - [Amazon SageMaker Documentation](https://docs.aws.amazon.com/sagemaker/latest/dg/whatis.html)
-- [TensorFlow Documentation](https://www.tensorflow.org/api_docs)
-- [AWS Lambda](https://aws.amazon.com/lambda/)
+- [AWS Lambda Documentation](https://aws.amazon.com/lambda/)
+- [Step Functions Developer Guide](https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html)
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](https://github.com/Elomunait/ML-Workflow-On-Amazon-SageMaker/blob/main/LICENSE) file for details.
+This project is licensed under the MIT License. See the [LICENSE](https://github.com/Elomunait/ML-Workflow-On-Amazon-SageMaker/blob/main/LICENSE) file for details.
