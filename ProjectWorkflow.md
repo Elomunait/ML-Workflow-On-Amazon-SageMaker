@@ -21,24 +21,149 @@ The workflow is constructed with the following steps:
 
 1. **Image Serialization Lambda**: 
     - This function reads an image from an S3 bucket, serializes it, and passes it to the next step in the Step Function.
-    
+
+    - [Image Serializer Lambda Function](https://github.com/Elomunait/ML-Workflow-On-Amazon-SageMaker/blob/main/serializeLambda.py)
+
+
+
 2. **Image Classification Lambda**: 
     - This function invokes the SageMaker model deployed at an endpoint to classify the image. The predictions are returned and passed to the next step.
 
+    - [Classifier Lambda Function](https://github.com/Elomunait/ML-Workflow-On-Amazon-SageMaker/blob/main/classifierLambda.py)
+
+
+
 3. **Threshold Filter Lambda**: 
     - Filters out predictions that don’t meet the confidence threshold of 73%. If the highest confidence prediction is below the threshold, the workflow throws an error. If the threshold is met, the inference is passed along.
+  
+    - [Threshold Filter Lambda Function](https://github.com/Elomunait/ML-Workflow-On-Amazon-SageMaker/blob/main/thresholdLambda.py)
+
+
 
 ### AWS Lambda Implementation
 
 1. **Image Serializer Lambda**:
-[Image Serializer Lambda Function](https://github.com/Elomunait/ML-Workflow-On-Amazon-SageMaker/blob/main/serializeLambda.py)
+    ```python
+    import json
+    import boto3
+    import base64
+
+    s3 = boto3.client('s3')
+
+    def lambda_handler(event, context):
+        """A function to serialize target data from S3"""
+    
+        # Log the entire event for debugging
+        print("Received event:", json.dumps(event, indent=2))
+    
+        # Get the s3 address from the Step Function event input
+        key = event.get('s3_key')  # Use get to avoid KeyError
+        bucket = event.get('s3_bucket')  # Use get to avoid KeyError
+    
+        # Check if key and bucket are present
+        if not key or not bucket:
+            print(f"Key: {key}, Bucket: {bucket}")  # Log the values for debugging
+            raise ValueError("Missing 's3_key' or 's3_bucket' in event")
+
+        # Download the data from s3 to /tmp/image.png
+        try:
+            s3.download_file(bucket, key, '/tmp/image.png')  # Download the image to the /tmp directory
+        except Exception as e:
+            raise RuntimeError(f"Failed to download file from S3: {str(e)}")
+
+        # We read the data from a file
+        with open("/tmp/image.png", "rb") as f:
+            image_data = base64.b64encode(f.read()).decode('utf-8')  # Encode and convert bytes to string
+
+        # Pass the data back to the Step Function
+        return {
+            'statusCode': 200,
+            'body': {
+                "s3_bucket": bucket,
+                "s3_key": key,
+                "image_data": image_data,
+                "inferences": []
+            }
+        }
+    ```
 
 2. **Classifier Lambda**:
-[Classifier Lambda Function](https://github.com/Elomunait/ML-Workflow-On-Amazon-SageMaker/blob/main/classifierLambda.py)
-
+    ```python
+    import json
+    import boto3
+    import base64
+    
+    # Initialize SageMaker runtime client
+    sagemaker_runtime = boto3.client('runtime.sagemaker')
+    
+    # Retrieve the SageMaker endpoint name from environment variables
+    ENDPOINT = "image-classification-endpoint"  # Replace with your actual endpoint name
+    
+    def lambda_handler(event, context):
+        # Validate input
+        if "body" not in event or "image_data" not in event["body"]:
+            return {
+                'statusCode': 400,
+                'body': json.dumps({"error": "Invalid input, 'image_data' not found"})
+            }
+        
+        # Decode the image data
+        try:
+            image = base64.b64decode(event["body"]["image_data"])
+        except Exception as e:
+            return {
+                'statusCode': 400,
+                'body': json.dumps({"error": f"Failed to decode image data: {str(e)}"})
+            }
+    
+        # Invoke SageMaker endpoint
+        try:
+            response = sagemaker_runtime.invoke_endpoint(
+                EndpointName=ENDPOINT,
+                ContentType="image/png",  # This is specific to your model
+                Body=image
+            )
+            # Parse the response
+            inferences = json.loads(response['Body'].read().decode())
+            
+            # Add inferences to the event body
+            event["body"]["inferences"] = inferences
+            return {
+                'statusCode': 200,
+                'body': event["body"]
+            }
+        except Exception as e:
+            return {
+                'statusCode': 500,
+                'body': json.dumps({"error": f"Prediction failed: {str(e)}"})
+            }
+    ```
 
 3. **Threshold Filter Lambda**:
-[Threshold Filter Lambda Function](https://github.com/Elomunait/ML-Workflow-On-Amazon-SageMaker/blob/main/thresholdLambda.py)
+    ```python
+    import json
+    
+    THRESHOLD = 0.73
+    
+    def lambda_handler(event, context):
+        
+        # Grab the inferences from the event
+        inferences = event["body"].get("inferences", [])
+        
+        # Check if any values in our inferences are above THRESHOLD
+        meets_threshold = any(prob >= THRESHOLD for prob in inferences)
+    
+        # If our threshold is met, pass our data back out of the
+        # Step Function, else, end the Step Function with an error
+        if meets_threshold:
+            return {
+                'statusCode': 200,
+                'body': event["body"]
+            }
+        else:
+            raise Exception("THRESHOLD_CONFIDENCE_NOT_MET")
+    ```
+
 
 
 ## Visualization of Model Performance
